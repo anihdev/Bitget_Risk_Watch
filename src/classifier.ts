@@ -1,49 +1,122 @@
-export type RiskLevel = 'SAFE' | 'WARNING' | 'CRITICAL';
+import { buildRecommendations } from './recommender';
+import type {
+  AppConfig,
+  ClassifiedPosition,
+  NormalizedPosition,
+  RiskLevel,
+  RiskReason,
+  ScanInput,
+  ScanRecord,
+} from './types';
 
-export interface PositionRisk {
-  symbol: string;
-  riskLevel: RiskLevel;
-  reasons: string[];
-  recommendedActions: string[];
+export function classifyPortfolio(scanInput: ScanInput, appConfig: AppConfig): ScanRecord {
+  const classifiedPositions = scanInput.positions.map((position) =>
+    classifyPosition(position, appConfig),
+  );
+  const flaggedPositions = classifiedPositions.filter((position) => position.riskLevel !== 'SAFE');
+  const accountSummary = summarizeAccount(scanInput.accountAssets, scanInput.positions);
+
+  return {
+    timestamp: scanInput.timestamp,
+    mode: scanInput.mode,
+    productType: scanInput.productType,
+    accountSummary,
+    positions: classifiedPositions,
+    flaggedPositions,
+    riskLevel: aggregateRiskLevel(classifiedPositions),
+    riskReasons: dedupe(flaggedPositions.flatMap((position) => position.riskReasons.map((reason) => reason.message))),
+    recommendation: dedupe(
+      flaggedPositions.flatMap((position) => position.recommendation.map((item) => item.summary)),
+    ),
+    scanStatus: scanInput.scanStatus,
+    fetchWarnings: scanInput.fetchWarnings,
+  };
 }
 
-const LEVERAGE_THRESHOLD = Number(process.env.LEVERAGE_THRESHOLD || 10);
-const LOSS_THRESHOLD_PCT = Number(process.env.LOSS_THRESHOLD_PCT || 15);
-const MARGIN_DANGER_PCT = Number(process.env.MARGIN_DANGER_PCT || 80);
+export function classifyPosition(
+  position: NormalizedPosition,
+  appConfig: AppConfig,
+): ClassifiedPosition {
+  const riskReasons: RiskReason[] = [];
 
-export function classifyPosition(position: any): PositionRisk {
-  const reasons: string[] = [];
-  const actions: string[] = [];
-  let riskLevel: RiskLevel = 'SAFE';
-
-  const leverage = parseFloat(position.leverage);
-  const unrealizedPnlPct = parseFloat(position.unrealizedPLR) * 100;
-  const marginRatio = parseFloat(position.marginRatio) * 100;
-  const hasStopLoss = position.stopLossPrice && position.stopLossPrice !== '0';
-
-  if (!hasStopLoss) {
-    reasons.push('No stop-loss set');
-    actions.push(`Set stop-loss on ${position.symbol}`);
-    riskLevel = 'WARNING';
+  if (!position.stopLossPresent) {
+    riskReasons.push({
+      code: 'NO_STOP_LOSS',
+      severity: 'WARNING',
+      message: 'No stop-loss is configured for this position.',
+    });
   }
 
-  if (leverage > LEVERAGE_THRESHOLD) {
-    reasons.push(`Leverage ${leverage}x exceeds threshold of ${LEVERAGE_THRESHOLD}x`);
-    actions.push(`Reduce leverage on ${position.symbol} to below ${LEVERAGE_THRESHOLD}x`);
-    riskLevel = 'WARNING';
+  if (position.leverage > appConfig.thresholds.leverageWarning) {
+    riskReasons.push({
+      code: 'HIGH_LEVERAGE',
+      severity: 'WARNING',
+      message: `Leverage is ${position.leverage.toFixed(1)}x, above the ${appConfig.thresholds.leverageWarning}x warning threshold.`,
+    });
   }
 
-  if (unrealizedPnlPct < -LOSS_THRESHOLD_PCT) {
-    reasons.push(`Unrealized loss of ${Math.abs(unrealizedPnlPct).toFixed(1)}% exceeds threshold`);
-    actions.push(`Consider partial close or hedge on ${position.symbol}`);
-    riskLevel = 'CRITICAL';
+  if (position.unrealizedPnlPct <= -appConfig.thresholds.lossCriticalPct) {
+    riskReasons.push({
+      code: 'LARGE_UNREALIZED_LOSS',
+      severity: 'CRITICAL',
+      message: `Unrealized loss is ${Math.abs(position.unrealizedPnlPct).toFixed(1)}%, beyond the ${appConfig.thresholds.lossCriticalPct}% critical threshold.`,
+    });
   }
 
-  if (marginRatio > MARGIN_DANGER_PCT) {
-    reasons.push(`Margin usage at ${marginRatio.toFixed(1)}% — approaching liquidation`);
-    actions.push(`Add margin or reduce size immediately on ${position.symbol}`);
-    riskLevel = 'CRITICAL';
+  if (position.marginRatio >= appConfig.thresholds.marginCriticalPct) {
+    riskReasons.push({
+      code: 'HIGH_MARGIN_RATIO',
+      severity: 'CRITICAL',
+      message: `Margin ratio is ${position.marginRatio.toFixed(1)}%, above the ${appConfig.thresholds.marginCriticalPct}% danger threshold.`,
+    });
   }
 
-  return { symbol: position.symbol, riskLevel, reasons, recommendedActions: actions };
+  const riskLevel = deriveRiskLevel(riskReasons);
+
+  return {
+    ...position,
+    riskLevel,
+    riskReasons,
+    recommendation: buildRecommendations(position, riskReasons, appConfig),
+  };
+}
+
+function deriveRiskLevel(riskReasons: RiskReason[]): RiskLevel {
+  if (riskReasons.some((reason) => reason.severity === 'CRITICAL')) {
+    return 'CRITICAL';
+  }
+  if (riskReasons.some((reason) => reason.severity === 'WARNING')) {
+    return 'WARNING';
+  }
+  return 'SAFE';
+}
+
+function aggregateRiskLevel(positions: ClassifiedPosition[]): RiskLevel {
+  if (positions.some((position) => position.riskLevel === 'CRITICAL')) {
+    return 'CRITICAL';
+  }
+  if (positions.some((position) => position.riskLevel === 'WARNING')) {
+    return 'WARNING';
+  }
+  return 'SAFE';
+}
+
+function summarizeAccount(
+  accountAssets: ScanRecord['accountSummary']['assets'],
+  positions: NormalizedPosition[],
+): ScanRecord['accountSummary'] {
+  const totalUnrealizedPnl = positions.reduce((sum, position) => sum + position.unrealizedPnl, 0);
+  const totalEquity = accountAssets.reduce((sum, asset) => sum + asset.equity, 0);
+
+  return {
+    totalEquity,
+    totalAvailable: accountAssets.reduce((sum, asset) => sum + asset.available, 0),
+    totalUnrealizedPnl,
+    openPositionCount: positions.length,
+    assets: accountAssets,
+  };
+}
+
+function dedupe(values: string[]): string[] {
+  return [...new Set(values)];
 }

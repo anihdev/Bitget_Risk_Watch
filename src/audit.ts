@@ -1,11 +1,30 @@
-import * as fs from 'fs';
+import { existsSync, readFileSync, writeFileSync } from 'node:fs';
+import type { ScanRecord } from './types';
+
 const AUDIT_FILE = './audit-log.json';
 
-export function logEntry(entry: object) {
-  let log = [];
-  if (fs.existsSync(AUDIT_FILE)) {
-    log = JSON.parse(fs.readFileSync(AUDIT_FILE, 'utf-8'));
+export function appendAuditRecord(record: ScanRecord): void {
+  const history = readAuditHistory();
+  history.push(record);
+  writeFileSync(AUDIT_FILE, JSON.stringify(history, null, 2));
+}
+
+export function readAuditHistory(): ScanRecord[] {
+  if (!existsSync(AUDIT_FILE)) {
+    return [];
   }
-  log.push({ timestamp: new Date().toISOString(), ...entry });
-  fs.writeFileSync(AUDIT_FILE, JSON.stringify(log, null, 2));
+
+  try {
+    const raw = readFileSync(AUDIT_FILE, 'utf8');
+    const parsed = JSON.parse(raw);
+    return Array.isArray(parsed) ? (parsed as ScanRecord[]) : [];
+  } catch {
+    return [];
+  }
+}
+
+export function readLatestAuditRecord(): ScanRecord | null {
+  const history = readAuditHistory();
+  const latest = history[history.length - 1];
+  return latest ?? null;
 }
