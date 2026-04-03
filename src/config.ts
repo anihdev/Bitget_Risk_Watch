@@ -23,5 +23,6 @@ export const config: AppConfig = {
     leverageWarning: Number(process.env.LEVERAGE_THRESHOLD ?? 10),
     lossCriticalPct: Number(process.env.LOSS_THRESHOLD_PCT ?? 15),
     marginCriticalPct: Number(process.env.MARGIN_DANGER_PCT ?? 80),
+    fundingWarningPct: Number(process.env.FUNDING_WARNING_PCT ?? 0.3),
   },
 };

@@ -20,6 +20,7 @@ export function classifyPortfolio(scanInput: ScanInput, appConfig: AppConfig): S
     timestamp: scanInput.timestamp,
     mode: scanInput.mode,
     productType: scanInput.productType,
+    diagnostics: scanInput.diagnostics,
     accountSummary,
     positions: classifiedPositions,
     flaggedPositions,
@@ -30,6 +31,7 @@ export function classifyPortfolio(scanInput: ScanInput, appConfig: AppConfig): S
     ),
     scanStatus: scanInput.scanStatus,
     fetchWarnings: scanInput.fetchWarnings,
+    skillCalls: scanInput.skillCalls,
   };
 }
 
@@ -44,6 +46,8 @@ export function classifyPosition(
       code: 'NO_STOP_LOSS',
       severity: 'WARNING',
       message: 'No stop-loss is configured for this position.',
+      traderExplanation:
+        'This position has no defined exit guard, so a sudden move can turn a manageable drawdown into a much larger loss and should be addressed quickly.',
     });
   }
 
@@ -52,6 +56,7 @@ export function classifyPosition(
       code: 'HIGH_LEVERAGE',
       severity: 'WARNING',
       message: `Leverage is ${position.leverage.toFixed(1)}x, above the ${appConfig.thresholds.leverageWarning}x warning threshold.`,
+      traderExplanation: `This ${position.symbol} position is running at ${position.leverage.toFixed(1)}x leverage, so a relatively small move against it can damage margin quickly.`,
     });
   }
 
@@ -60,6 +65,7 @@ export function classifyPosition(
       code: 'LARGE_UNREALIZED_LOSS',
       severity: 'CRITICAL',
       message: `Unrealized loss is ${Math.abs(position.unrealizedPnlPct).toFixed(1)}%, beyond the ${appConfig.thresholds.lossCriticalPct}% critical threshold.`,
+      traderExplanation: `This position is already down ${Math.abs(position.unrealizedPnlPct).toFixed(1)}%, which means the trade is no longer a minor fluctuation and needs active risk control.`,
     });
   }
 
@@ -68,6 +74,20 @@ export function classifyPosition(
       code: 'HIGH_MARGIN_RATIO',
       severity: 'CRITICAL',
       message: `Margin ratio is ${position.marginRatio.toFixed(1)}%, above the ${appConfig.thresholds.marginCriticalPct}% danger threshold.`,
+      traderExplanation: `Margin usage is at ${position.marginRatio.toFixed(1)}%, which leaves limited room before liquidation pressure becomes a serious concern.`,
+    });
+  }
+
+  if (
+    position.marketContext.fundingRatePct !== null &&
+    Math.abs(position.marketContext.fundingRatePct) >= appConfig.thresholds.fundingWarningPct
+  ) {
+    riskReasons.push({
+      code: 'HIGH_FUNDING_RATE',
+      severity: 'WARNING',
+      message: `Funding rate is ${position.marketContext.fundingRatePct.toFixed(3)}%, above the ${appConfig.thresholds.fundingWarningPct}% monitoring threshold.`,
+      traderExplanation:
+        'Elevated funding adds carry pressure to the position, so keeping size or leverage unchanged through the next funding window can make a weak trade more expensive.',
     });
   }
 

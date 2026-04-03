@@ -18,6 +18,11 @@ const MOCK_POSITIONS: NormalizedPosition[] = [
     unrealizedPnlPct: -18,
     marginRatio: 85,
     stopLossPresent: false,
+    marketContext: {
+      fundingRatePct: 0.45,
+      priceChange24hPct: -3.4,
+      markPriceSource: 'position',
+    },
   },
   {
     symbol: 'ETHUSDT',
@@ -30,6 +35,11 @@ const MOCK_POSITIONS: NormalizedPosition[] = [
     unrealizedPnlPct: -3.8,
     marginRatio: 38,
     stopLossPresent: true,
+    marketContext: {
+      fundingRatePct: 0.012,
+      priceChange24hPct: -1.1,
+      markPriceSource: 'position',
+    },
   },
   {
     symbol: 'SOLUSDT',
@@ -42,6 +52,11 @@ const MOCK_POSITIONS: NormalizedPosition[] = [
     unrealizedPnlPct: 8.9,
     marginRatio: 22,
     stopLossPresent: false,
+    marketContext: {
+      fundingRatePct: -0.008,
+      priceChange24hPct: -4.6,
+      markPriceSource: 'position',
+    },
   },
 ];
 
@@ -51,9 +66,40 @@ export function fetchScanInput(): ScanInput {
       timestamp: new Date().toISOString(),
       mode: 'SIMULATION',
       productType: config.productType,
+      diagnostics: {
+        bgcAvailable: false,
+        credentialsPresent: false,
+        readOnlyMode: true,
+      },
       accountAssets: MOCK_ACCOUNT_ASSETS,
       positions: MOCK_POSITIONS,
       fetchWarnings: ['Using bundled simulation portfolio data.'],
+      skillCalls: [
+        {
+          surface: 'Bitget AgentHub Skills',
+          command: 'bgc account get_account_assets',
+          status: 'SKIPPED',
+          note: 'Simulation mode uses bundled account data.',
+        },
+        {
+          surface: 'Bitget AgentHub Skills',
+          command: `bgc futures futures_get_positions --productType ${config.productType}`,
+          status: 'SKIPPED',
+          note: 'Simulation mode uses bundled futures positions.',
+        },
+        {
+          surface: 'Bitget AgentHub Skills',
+          command: 'bgc futures futures_get_ticker --symbol BTCUSDT',
+          status: 'SKIPPED',
+          note: 'Simulation mode uses bundled ticker context.',
+        },
+        {
+          surface: 'Bitget AgentHub Skills',
+          command: 'bgc futures futures_get_funding_rate --symbol BTCUSDT',
+          status: 'SKIPPED',
+          note: 'Simulation mode uses bundled funding context.',
+        },
+      ],
       scanStatus: 'COMPLETE',
     };
   }

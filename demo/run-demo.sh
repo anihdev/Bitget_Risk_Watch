@@ -29,21 +29,26 @@ echo "================================================================"
 echo "Mode: $RUNTIME_MODE"
 echo ""
 
-echo "[1/5] Running portfolio scan"
+echo "[1/6] Running portfolio scan"
 npx ts-node src/index.ts
+echo "Scan shows Bitget skill calls, funding context, and flagged positions."
 echo ""
 
-echo "[2/5] Query: which positions are at risk?"
+echo "[2/6] Query: which positions are at risk?"
 npx ts-node src/query.ts "which positions are at risk?"
 echo ""
 
-echo "[3/5] Query: why is BTC flagged?"
+echo "[3/6] Query: why is BTC flagged?"
 npx ts-node src/query.ts "why is BTC flagged?"
 echo ""
 
-echo "[4/5] Query: what actions do you recommend?"
+echo "[4/6] Query: what actions do you recommend?"
 npx ts-node src/query.ts "what actions do you recommend?"
 echo ""
 
-echo "[5/5] Latest audit summary"
-node -e "const fs=require('fs'); const data=JSON.parse(fs.readFileSync('audit-log.json','utf8')); const last=data[data.length-1]; console.log(JSON.stringify({timestamp:last.timestamp, mode:last.mode, riskLevel:last.riskLevel, scanStatus:last.scanStatus, flaggedPositions:last.flaggedPositions.map(p => ({symbol:p.symbol, riskLevel:p.riskLevel}))}, null, 2));"
+echo "[5/6] Query: what changed since last scan?"
+npx ts-node src/query.ts "what changed since last scan?"
+echo ""
+
+echo "[6/6] Latest audit summary"
+node -e "const fs=require('fs'); const emojis={SAFE:'✅',WARNING:'⚠️',CRITICAL:'🚨'}; const data=JSON.parse(fs.readFileSync('audit-log.json','utf8')); const last=data[data.length-1]; console.log('Timestamp: ' + last.timestamp); console.log('Mode: ' + last.mode); console.log('Overall Risk: ' + emojis[last.riskLevel] + ' ' + last.riskLevel); console.log('Scan Status: ' + last.scanStatus); console.log('Skill Calls:'); for (const s of last.skillCalls) console.log('  - ' + s.command + ' -> ' + s.status); console.log('Flagged Positions:'); for (const p of last.flaggedPositions) console.log('  - ' + p.symbol + ' [' + emojis[p.riskLevel] + ' ' + p.riskLevel + ']');"

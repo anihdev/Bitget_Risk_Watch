@@ -1,5 +1,6 @@
 import { readAuditHistory, readLatestAuditRecord } from './audit';
 import type { ClassifiedPosition, ScanRecord } from './types';
+import { formatRiskLabel } from './visuals';
 
 function main(): void {
   const question = process.argv.slice(2).join(' ').trim().toLowerCase();
@@ -26,10 +27,10 @@ function answerQuery(question: string, latest: ScanRecord, history: ScanRecord[]
 
   if (question.includes('at risk')) {
     if (latest.flaggedPositions.length === 0) {
-      return 'No open positions are currently flagged.';
+      return `${formatRiskLabel('SAFE')} No open positions are currently flagged.`;
     }
     return latest.flaggedPositions
-      .map((position) => `${position.symbol}: ${position.riskLevel} because ${joinReasons(position)}`)
+      .map((position) => `${position.symbol}: ${formatRiskLabel(position.riskLevel)} because ${joinReasons(position)}`)
       .join('\n');
   }
 
@@ -40,9 +41,9 @@ function answerQuery(question: string, latest: ScanRecord, history: ScanRecord[]
       return `No position found for ${symbol.toUpperCase()}.`;
     }
     if (position.riskLevel === 'SAFE') {
-      return `${position.symbol} is SAFE in the latest scan.`;
+      return `${position.symbol} is ${formatRiskLabel('SAFE')} in the latest scan.`;
     }
-    return `${position.symbol} is ${position.riskLevel} because ${joinReasons(position)}.`;
+    return `${position.symbol} is ${formatRiskLabel(position.riskLevel)} because ${joinReasons(position)}.`;
   }
 
   if (question.includes('recommend')) {
@@ -80,10 +81,13 @@ function describeChanges(previous: ScanRecord, latest: ScanRecord): string {
     const prior = previousMap.get(position.symbol);
     if (!prior) {
       changes.push(`${position.symbol} is new in the latest scan with ${position.riskLevel} risk.`);
+      changes[changes.length - 1] = `${position.symbol} is new in the latest scan with ${formatRiskLabel(position.riskLevel)} risk.`;
       continue;
     }
     if (prior.riskLevel !== position.riskLevel) {
-      changes.push(`${position.symbol} moved from ${prior.riskLevel} to ${position.riskLevel}.`);
+      changes.push(
+        `${position.symbol} moved from ${formatRiskLabel(prior.riskLevel)} to ${formatRiskLabel(position.riskLevel)}.`,
+      );
     }
     if (Math.abs(prior.marginRatio - position.marginRatio) >= 5) {
       changes.push(
@@ -102,12 +106,14 @@ function describeChanges(previous: ScanRecord, latest: ScanRecord): string {
 }
 
 function joinReasons(position: ClassifiedPosition): string {
-  return position.riskReasons.map((reason) => reason.message).join('; ');
+  return position.riskReasons
+    .map((reason) => `${reason.message} ${reason.traderExplanation}`)
+    .join('; ');
 }
 
 function buildPortfolioSummary(latest: ScanRecord): string {
   return [
-    `Overall risk: ${latest.riskLevel}`,
+    `Overall risk: ${formatRiskLabel(latest.riskLevel)}`,
     `Open positions: ${latest.accountSummary.openPositionCount}`,
     `Flagged positions: ${latest.flaggedPositions.length}`,
     `Unrealized PnL: ${latest.accountSummary.totalUnrealizedPnl.toFixed(2)}`,
