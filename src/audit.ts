@@ -1,7 +1,8 @@
-import { existsSync, readFileSync, writeFileSync } from 'node:fs';
-import type { ScanRecord } from './types';
+import { appendFileSync, existsSync, readFileSync, writeFileSync } from 'node:fs';
+import type { ExecutionAuditRecord, ScanRecord } from './types';
 
 const AUDIT_FILE = './audit-log.json';
+const EXECUTION_AUDIT_FILE = './execution-audit.jsonl';
 
 export function appendAuditRecord(record: ScanRecord): void {
   const history = readAuditHistory();
@@ -27,4 +28,8 @@ export function readLatestAuditRecord(): ScanRecord | null {
   const history = readAuditHistory();
   const latest = history[history.length - 1];
   return latest ?? null;
+}
+
+export function appendExecutionAuditRecord(record: ExecutionAuditRecord): void {
+  appendFileSync(EXECUTION_AUDIT_FILE, `${JSON.stringify(record)}\n`);
 }

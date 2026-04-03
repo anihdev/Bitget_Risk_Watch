@@ -121,3 +121,19 @@ export interface ScanRecord {
   fetchWarnings: string[];
   skillCalls: SkillCall[];
 }
+
+export interface ExecutionAuditRecord {
+  timestamp: string;
+  mode: RuntimeMode;
+  productType: 'USDT-FUTURES';
+  symbol: string;
+  operation: 'PREVIEW' | 'EXECUTE' | 'CANCEL' | 'QUERY';
+  action: string;
+  command: string;
+  confirmationTokenRequired?: string;
+  confirmationProvided: boolean;
+  paperTrading: boolean;
+  status: 'PREVIEWED' | 'BLOCKED' | 'SUCCESS' | 'FAILED';
+  note: string;
+  response?: string;
+}

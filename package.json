@@ -6,6 +6,7 @@
   "scripts": {
     "scan": "ts-node src/index.ts",
     "query": "ts-node src/query.ts",
+    "execute": "ts-node src/execute.ts",
     "demo": "bash demo/run-demo.sh",
     "typecheck": "tsc --noEmit"
   },

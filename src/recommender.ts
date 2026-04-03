@@ -16,7 +16,7 @@ export function buildRecommendations(
           confidence: 'HIGH',
           rationale: 'The fastest way to reduce uncontrolled downside is to define an exit level now.',
           executionPath: {
-            skill: 'futures_place_plan_order',
+            skill: 'unsupported_stop_loss_flow',
             side: 'n/a',
             sizeHint: '100% of current position as a protective stop',
             confirmationRequired: true,
@@ -30,7 +30,7 @@ export function buildRecommendations(
           confidence: 'MEDIUM',
           rationale: 'Lower leverage gives the position more room to absorb adverse price moves before margin pressure accelerates.',
           executionPath: {
-            skill: 'futures_adjust_leverage',
+            skill: 'futures_set_leverage',
             side: 'n/a',
             sizeHint: `Target leverage below ${appConfig.thresholds.leverageWarning}x`,
             confirmationRequired: true,
