@@ -1,7 +1,7 @@
 /** Renders the main terminal-facing scan report. */
 import type { ClassifiedPosition, RiskLevel, ScanRecord } from './types';
 import { HTML_REPORT_FILE } from './htmlReport';
-import { reportBaseUrl } from './reportPreview';
+import { reportAccessUrls, reportBaseUrl } from './reportPreview';
 import { buildSkillHubSuggestions } from './skillHub';
 import { formatRiskLabel } from './visuals';
 
@@ -56,7 +56,7 @@ export function renderScanReport(scanRecord: ScanRecord): void {
     console.log('\nNo open USDT-FUTURES positions were found.');
     console.log('\nAudit log updated: audit-log.json');
     console.log(`HTML report updated: ${HTML_REPORT_FILE}`);
-    console.log(`Preview on localhost: ${reportBaseUrl()}`);
+    printPreviewUrls();
     return;
   }
 
@@ -79,7 +79,7 @@ export function renderScanReport(scanRecord: ScanRecord): void {
   console.log(`\n${BOLD}Audit${RESET}`);
   console.log('audit-log.json updated');
   console.log(`HTML report updated: ${HTML_REPORT_FILE}`);
-  console.log(`Preview on localhost: ${reportBaseUrl()}`);
+  printPreviewUrls();
 
   const enrichments = buildSkillHubSuggestions(scanRecord);
   if (enrichments.length > 0) {
@@ -88,6 +88,16 @@ export function renderScanReport(scanRecord: ScanRecord): void {
       console.log(`- ${skill.name}: ${skill.purpose}`);
       console.log(`  Prompt: ${skill.examplePrompt}`);
     }
+  }
+}
+
+/** Prints browser-usable report URLs for the current machine and LAN. */
+function printPreviewUrls(): void {
+  const urls = reportAccessUrls();
+  console.log(`Preview on this machine: ${reportBaseUrl()}`);
+
+  for (const url of urls.slice(1)) {
+    console.log(`Preview on local network: ${url}`);
   }
 }
 

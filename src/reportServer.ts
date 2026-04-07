@@ -6,9 +6,10 @@ import { existsSync, readFileSync } from 'node:fs';
 import { extname } from 'node:path';
 import { readLatestAuditRecord } from './audit';
 import { HTML_REPORT_FILE, writeHtmlReport } from './htmlReport';
+import { reportAccessUrls } from './reportPreview';
 
 const DEFAULT_PORT = Number(process.env.REPORT_PORT ?? 4173);
-const HOST = process.env.REPORT_HOST ?? '127.0.0.1';
+const HOST = process.env.REPORT_HOST ?? '0.0.0.0';
 
 /** CLI entry point for the standalone report preview server. */
 function main(): void {
@@ -33,7 +34,10 @@ function main(): void {
   });
 
   server.listen(DEFAULT_PORT, HOST, () => {
-    console.log(`Report server running at http://${HOST}:${DEFAULT_PORT}`);
+    console.log(`Report server listening on ${HOST}:${DEFAULT_PORT}`);
+    for (const url of reportAccessUrls()) {
+      console.log(`Open report at ${url}`);
+    }
     console.log(`Serving ${HTML_REPORT_FILE}`);
   });
 }

@@ -6,6 +6,8 @@ import type { ClassifiedPosition, Recommendation, RiskLevel, ScanRecord } from '
 
 /** Absolute output path for the generated HTML report. */
 export const HTML_REPORT_FILE = resolve(process.cwd(), 'latest-report.html');
+const AUTHOR_NAME = 'AnihDev';
+const GITHUB_URL = 'https://github.com/anihdev/Bitget_Risk_Watch';
 
 /** Writes the latest scan to disk as a self-contained HTML document. */
 export function writeHtmlReport(scanRecord: ScanRecord): string {
@@ -19,6 +21,8 @@ function buildHtmlReport(scanRecord: ScanRecord): string {
     dateStyle: 'medium',
     timeStyle: 'medium',
   }));
+  const authorName = escapeHtml(AUTHOR_NAME);
+  const githubUrl = escapeHtml(GITHUB_URL);
 
   return `<!DOCTYPE html>
 <html lang="en">
@@ -73,6 +77,19 @@ function buildHtmlReport(scanRecord: ScanRecord): string {
       padding: 28px;
       position: relative;
       overflow: hidden;
+      background:
+        linear-gradient(135deg, rgba(8, 17, 20, 0.08), rgba(15, 118, 110, 0.04) 42%, rgba(255, 252, 246, 0) 100%),
+        var(--panel);
+    }
+
+    .hero::before {
+      content: "";
+      position: absolute;
+      inset: 0;
+      background:
+        radial-gradient(circle at top center, rgba(15, 118, 110, 0.12), transparent 34%),
+        linear-gradient(180deg, rgba(12, 18, 20, 0.05), transparent 52%);
+      pointer-events: none;
     }
 
     .hero::after {
@@ -85,13 +102,93 @@ function buildHtmlReport(scanRecord: ScanRecord): string {
       pointer-events: none;
     }
 
-    .eyebrow {
-      font-family: Arial, sans-serif;
-      font-size: 12px;
-      letter-spacing: 0.16em;
+    .hero::selection {
+      background: rgba(15, 118, 110, 0.16);
+    }
+
+    .hero > * {
+      position: relative;
+      z-index: 1;
+    }
+
+    .hero-mark {
+      position: absolute;
+      top: 20px;
+      right: 28px;
+      font: 600 9px/1 Arial, sans-serif;
+      letter-spacing: 0.28em;
       text-transform: uppercase;
+      color: rgba(30, 26, 22, 0.24);
+      text-decoration: none;
+      pointer-events: auto;
+      z-index: 1;
+    }
+
+    .brand {
+      display: grid;
+      justify-items: center;
+      gap: 8px;
+      margin-bottom: 18px;
+      text-align: center;
+    }
+
+    .brand-title {
+      display: inline-flex;
+      align-items: baseline;
+      gap: 8px;
+      font: 600 clamp(24px, 4vw, 38px)/1 Arial, sans-serif;
+      letter-spacing: -0.03em;
+      color: var(--ink);
+      text-shadow: 0 0 18px rgba(15, 118, 110, 0.1);
+      flex-wrap: wrap;
+      justify-content: center;
+    }
+
+    .brand-title-main {
+      color: var(--ink);
+    }
+
+    .brand-title-byline {
+      font-size: 0.52em;
+      letter-spacing: 0.02em;
+      color: rgba(30, 26, 22, 0.48);
+      text-transform: none;
+    }
+
+    .brand-sub {
+      font: 600 12px/1.4 Arial, sans-serif;
+      letter-spacing: 0.18em;
+      text-transform: uppercase;
+      color: var(--muted);
+    }
+
+    .brand-link {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 46px;
+      padding: 0 22px;
+      border-radius: 999px;
+      border: 1px solid rgba(15, 118, 110, 0.3);
+      background: linear-gradient(180deg, rgba(15, 118, 110, 0.16), rgba(15, 118, 110, 0.08));
+      box-shadow:
+        0 0 0 1px rgba(255, 255, 255, 0.45) inset,
+        0 10px 24px rgba(15, 118, 110, 0.14),
+        0 0 26px rgba(15, 118, 110, 0.14);
       color: var(--accent);
-      margin-bottom: 10px;
+      font: 600 13px Arial, sans-serif;
+      letter-spacing: 0.06em;
+      text-decoration: none;
+      transition: transform 160ms ease, box-shadow 160ms ease, background 160ms ease;
+    }
+
+    .brand-link:hover {
+      transform: translateY(-1px);
+      background: linear-gradient(180deg, rgba(15, 118, 110, 0.2), rgba(15, 118, 110, 0.1));
+      box-shadow:
+        0 0 0 1px rgba(255, 255, 255, 0.55) inset,
+        0 16px 34px rgba(15, 118, 110, 0.18),
+        0 0 34px rgba(15, 118, 110, 0.2);
     }
 
     h1, h2, h3 {
@@ -419,6 +516,16 @@ function buildHtmlReport(scanRecord: ScanRecord): string {
         grid-template-columns: 1fr;
       }
 
+      .brand {
+        margin-bottom: 20px;
+      }
+
+      .hero-mark {
+        top: 16px;
+        right: 18px;
+        letter-spacing: 0.18em;
+      }
+
       .panel-header,
       .risk-card-header {
         flex-direction: column;
@@ -456,7 +563,15 @@ function buildHtmlReport(scanRecord: ScanRecord): string {
 <body>
   <main class="shell">
     <section class="hero">
-      <div class="eyebrow">Bitget Risk Watch</div>
+      <a href="${githubUrl}" target="_blank" rel="noreferrer" class="hero-mark">github.com/anihdev/Bitget_Risk_Watch</a>
+      <div class="brand">
+        <div class="brand-title">
+          <span class="brand-title-main">Bitget Risk Watch</span>
+          <span class="brand-title-byline">| by ${authorName}</span>
+        </div>
+        <div class="brand-sub">Bitget-native AI risk engine</div>
+        <a href="${githubUrl}" target="_blank" rel="noreferrer" class="brand-link">Live now - open source</a>
+      </div>
       <div class="hero-copy">
         <div>
           <h1>Portfolio risk report</h1>
