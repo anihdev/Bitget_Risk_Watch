@@ -1,0 +1,1188 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Bitget Risk Watch Report</title>
+  <style>
+    :root {
+      --bg: #f4efe7;
+      --panel: rgba(255, 252, 246, 0.92);
+      --panel-strong: #fffdf9;
+      --ink: #1e1a16;
+      --muted: #6c6359;
+      --line: rgba(54, 43, 33, 0.12);
+      --safe: #227a52;
+      --warning: #b7791f;
+      --critical: #b2342b;
+      --accent: #0f766e;
+      --accent-soft: rgba(15, 118, 110, 0.08);
+      --shadow: 0 18px 44px rgba(43, 30, 17, 0.12);
+      --radius: 22px;
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      font-family: Georgia, "Times New Roman", serif;
+      color: var(--ink);
+      background:
+        radial-gradient(circle at top left, rgba(15, 118, 110, 0.18), transparent 32%),
+        radial-gradient(circle at top right, rgba(183, 121, 31, 0.16), transparent 26%),
+        linear-gradient(180deg, #f8f2ea 0%, #efe6d8 100%);
+    }
+
+    .shell {
+      width: min(1180px, calc(100% - 32px));
+      margin: 32px auto 56px;
+    }
+
+    .hero,
+    .panel {
+      background: var(--panel);
+      backdrop-filter: blur(10px);
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+    }
+
+    .hero {
+      padding: 28px;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .hero::after {
+      content: "";
+      position: absolute;
+      inset: auto -80px -80px auto;
+      width: 240px;
+      height: 240px;
+      background: radial-gradient(circle, rgba(15, 118, 110, 0.18), transparent 68%);
+      pointer-events: none;
+    }
+
+    .eyebrow {
+      font-family: Arial, sans-serif;
+      font-size: 12px;
+      letter-spacing: 0.16em;
+      text-transform: uppercase;
+      color: var(--accent);
+      margin-bottom: 10px;
+    }
+
+    h1, h2, h3 {
+      margin: 0;
+      font-weight: 600;
+    }
+
+    h1 {
+      font-size: clamp(32px, 5vw, 52px);
+      line-height: 0.98;
+      max-width: 10ch;
+    }
+
+    .hero-copy {
+      display: grid;
+      gap: 16px;
+      grid-template-columns: minmax(0, 1.2fr) minmax(280px, 0.8fr);
+      align-items: end;
+    }
+
+    .subhead {
+      font-size: 18px;
+      line-height: 1.55;
+      color: var(--muted);
+      max-width: 58ch;
+    }
+
+    .hero-meta {
+      display: grid;
+      gap: 12px;
+      justify-items: start;
+    }
+
+    .runtime-strip {
+      display: grid;
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      gap: 12px;
+      margin-top: 22px;
+      padding-top: 18px;
+      border-top: 1px solid var(--line);
+    }
+
+    .runtime-item {
+      padding: 14px 16px;
+      border-radius: 16px;
+      background: rgba(255, 255, 255, 0.55);
+      border: 1px solid var(--line);
+    }
+
+    .runtime-label {
+      font: 600 11px Arial, sans-serif;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      color: var(--muted);
+    }
+
+    .runtime-value {
+      margin-top: 7px;
+      font-size: 16px;
+      line-height: 1.35;
+    }
+
+    .badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 10px;
+      padding: 10px 14px;
+      border-radius: 999px;
+      font: 600 13px Arial, sans-serif;
+      letter-spacing: 0.04em;
+      text-transform: uppercase;
+      background: var(--accent-soft);
+      color: var(--ink);
+      border: 1px solid rgba(15, 118, 110, 0.16);
+    }
+
+    .badge.safe { color: var(--safe); border-color: rgba(34, 122, 82, 0.18); background: rgba(34, 122, 82, 0.08); }
+    .badge.warning { color: var(--warning); border-color: rgba(183, 121, 31, 0.18); background: rgba(183, 121, 31, 0.08); }
+    .badge.critical { color: var(--critical); border-color: rgba(178, 52, 43, 0.18); background: rgba(178, 52, 43, 0.08); }
+
+    .grid {
+      display: grid;
+      gap: 18px;
+      margin-top: 18px;
+    }
+
+    .summary-grid {
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+    }
+
+    .summary-card,
+    .panel {
+      padding: 22px;
+    }
+
+    .summary-card {
+      background: var(--panel-strong);
+      border: 1px solid var(--line);
+      border-radius: 18px;
+      box-shadow: 0 8px 24px rgba(43, 30, 17, 0.06);
+    }
+
+    .summary-card .label,
+    th,
+    .meta-label {
+      font: 600 12px Arial, sans-serif;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      color: var(--muted);
+    }
+
+    .summary-card .value {
+      margin-top: 10px;
+      font-size: clamp(24px, 4vw, 34px);
+      line-height: 1.1;
+    }
+
+    .summary-card .hint {
+      margin-top: 8px;
+      color: var(--muted);
+      font-size: 14px;
+      line-height: 1.45;
+    }
+
+    .panel-header {
+      display: flex;
+      justify-content: space-between;
+      gap: 16px;
+      align-items: flex-start;
+      margin-bottom: 18px;
+    }
+
+    .panel-title {
+      display: grid;
+      gap: 8px;
+    }
+
+    .panel-copy {
+      color: var(--muted);
+      max-width: 60ch;
+      line-height: 1.5;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+    }
+
+    th {
+      text-align: left;
+      padding: 0 0 12px;
+      border-bottom: 1px solid var(--line);
+    }
+
+    td {
+      vertical-align: top;
+      padding: 16px 8px 16px 0;
+      border-bottom: 1px solid var(--line);
+      line-height: 1.45;
+    }
+
+    tr:last-child td {
+      border-bottom: none;
+    }
+
+    .mono {
+      font-family: "Courier New", monospace;
+      font-size: 13px;
+    }
+
+    .position-symbol {
+      font-size: 18px;
+      font-weight: 700;
+    }
+
+    .risk-list {
+      display: grid;
+      gap: 16px;
+    }
+
+    .skill-list {
+      display: grid;
+      gap: 14px;
+    }
+
+    .skill-card {
+      padding: 18px;
+      border: 1px solid var(--line);
+      border-radius: 18px;
+      background: var(--panel-strong);
+    }
+
+    .skill-name {
+      font: 600 14px Arial, sans-serif;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      color: var(--accent);
+    }
+
+    .skill-purpose {
+      margin-top: 8px;
+      line-height: 1.5;
+    }
+
+    .skill-meta {
+      margin-top: 10px;
+      color: var(--muted);
+      line-height: 1.5;
+    }
+
+    .skill-prompt {
+      margin-top: 12px;
+      padding: 12px 14px;
+      border-radius: 14px;
+      background: rgba(15, 118, 110, 0.06);
+      border: 1px solid rgba(15, 118, 110, 0.12);
+      font: 13px/1.5 "Courier New", monospace;
+      color: var(--ink);
+    }
+
+    .risk-card {
+      padding: 20px;
+      border: 1px solid var(--line);
+      border-radius: 18px;
+      background: var(--panel-strong);
+    }
+
+    .risk-card-header {
+      display: flex;
+      justify-content: space-between;
+      gap: 12px;
+      align-items: flex-start;
+      margin-bottom: 10px;
+    }
+
+    .reason,
+    .recommendation {
+      margin-top: 12px;
+      padding-left: 14px;
+      border-left: 3px solid rgba(15, 118, 110, 0.16);
+    }
+
+    .reason-list,
+    .recommendation-list {
+      display: grid;
+      gap: 12px;
+      margin-top: 12px;
+    }
+
+    .reason-item,
+    .recommendation-item {
+      padding-left: 14px;
+      border-left: 3px solid rgba(15, 118, 110, 0.16);
+    }
+
+    .reason-title,
+    .recommendation-title {
+      font: 600 12px Arial, sans-serif;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      color: var(--accent);
+      margin-bottom: 6px;
+    }
+
+    .meta-grid {
+      display: grid;
+      gap: 12px;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      margin-top: 8px;
+    }
+
+    .meta-chip {
+      padding: 14px;
+      border-radius: 16px;
+      background: rgba(255, 255, 255, 0.6);
+      border: 1px solid var(--line);
+    }
+
+    .meta-value {
+      margin-top: 6px;
+      font-size: 16px;
+    }
+
+    .warning-list {
+      margin: 0;
+      padding-left: 18px;
+      color: var(--muted);
+      line-height: 1.6;
+    }
+
+    details {
+      margin-top: 16px;
+    }
+
+    details summary {
+      cursor: pointer;
+      font: 600 13px Arial, sans-serif;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      color: var(--accent);
+    }
+
+    pre {
+      margin: 14px 0 0;
+      padding: 18px;
+      overflow: auto;
+      border-radius: 16px;
+      background: #191613;
+      color: #f5ecdf;
+      font: 13px/1.55 "Courier New", monospace;
+    }
+
+    .footer-note {
+      margin-top: 16px;
+      color: var(--muted);
+      font-size: 14px;
+      line-height: 1.5;
+    }
+
+    @media (max-width: 900px) {
+      .hero-copy,
+      .summary-grid,
+      .meta-grid,
+      .runtime-strip {
+        grid-template-columns: 1fr;
+      }
+
+      .panel-header,
+      .risk-card-header {
+        flex-direction: column;
+      }
+
+      table,
+      thead,
+      tbody,
+      th,
+      td,
+      tr {
+        display: block;
+      }
+
+      thead {
+        display: none;
+      }
+
+      td {
+        padding: 10px 0;
+      }
+
+      td::before {
+        content: attr(data-label);
+        display: block;
+        margin-bottom: 6px;
+        font: 600 12px Arial, sans-serif;
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+        color: var(--muted);
+      }
+    }
+  </style>
+</head>
+<body>
+  <main class="shell">
+    <section class="hero">
+      <div class="eyebrow">Bitget Risk Watch</div>
+      <div class="hero-copy">
+        <div>
+          <h1>Portfolio risk report</h1>
+          <p class="subhead">Bitget Risk Watch terminal output for USDT-FUTURES positions. This report shows what is at risk, why it was flagged, and the protective actions recommended by the agent via CLI.</p>
+        </div>
+        <div class="hero-meta">
+          <div class="badge critical">CRITICAL overall risk</div>
+          <div class="badge">SIMULATION mode</div>
+          <div class="badge">COMPLETE scan status</div>
+          <div class="footer-note">Generated Apr 6, 2026, 6:58:18 AM</div>
+        </div>
+      </div>
+      <div class="runtime-strip">
+        <div class="runtime-item">
+          <div class="runtime-label">Runtime</div>
+          <div class="runtime-value">SIMULATION</div>
+        </div>
+        <div class="runtime-item">
+          <div class="runtime-label">Product</div>
+          <div class="runtime-value">USDT-FUTURES</div>
+        </div>
+        <div class="runtime-item">
+          <div class="runtime-label">Scan Status</div>
+          <div class="runtime-value">COMPLETE</div>
+        </div>
+        <div class="runtime-item">
+          <div class="runtime-label">Source</div>
+          <div class="runtime-value">Bundled simulation data</div>
+        </div>
+      </div>
+    </section>
+
+    <section class="grid summary-grid">
+      <article class="summary-card">
+        <div class="label">Total Equity</div>
+        <div class="value">$1,600.00</div>
+        <div class="hint">Available balance: $920.00</div>
+      </article>
+      <article class="summary-card">
+        <div class="label">Open Positions</div>
+        <div class="value">3</div>
+        <div class="hint">2 currently flagged</div>
+      </article>
+      <article class="summary-card">
+        <div class="label">Unrealized PnL</div>
+        <div class="value">-$126.90</div>
+        <div class="hint">Net open loss across the scanned portfolio.</div>
+      </article>
+      <article class="summary-card">
+        <div class="label">Diagnostics</div>
+        <div class="value">CLI Missing</div>
+        <div class="hint">Bitget CLI is not available, so only simulation or limited reads can run here.</div>
+      </article>
+    </section>
+
+    <section class="panel grid">
+      <div class="panel-header">
+        <div class="panel-title">
+          <h2>Risk table</h2>
+          <div class="panel-copy">The full position list with leverage, PnL, margin pressure, stop-loss state, and live market context used for classification.</div>
+        </div>
+      </div>
+      <table>
+    <thead>
+      <tr>
+        <th>Position</th>
+        <th>Risk</th>
+        <th>Leverage</th>
+        <th>PnL</th>
+        <th>Margin Ratio</th>
+        <th>Stop Loss</th>
+        <th>Market Context</th>
+      </tr>
+    </thead>
+    <tbody>
+    <tr>
+      <td data-label="Symbol">
+        <div class="position-symbol">BTCUSDT</div>
+        <div class="panel-copy">long 0.12</div>
+      </td>
+      <td data-label="Risk">
+        <span class="badge critical">CRITICAL</span>
+      </td>
+      <td data-label="Leverage">15.0x</td>
+      <td data-label="PnL">-$172.80<br />-18.0%</td>
+      <td data-label="Margin">85.0%</td>
+      <td data-label="Stop Loss">Missing</td>
+      <td data-label="Market">
+        <div>24h: -3.400%</div>
+        <div>Funding: +0.450%</div>
+        <div class="mono">position</div>
+      </td>
+    </tr>
+  
+    <tr>
+      <td data-label="Symbol">
+        <div class="position-symbol">ETHUSDT</div>
+        <div class="panel-copy">long 1.8</div>
+      </td>
+      <td data-label="Risk">
+        <span class="badge safe">SAFE</span>
+      </td>
+      <td data-label="Leverage">6.0x</td>
+      <td data-label="PnL">-$111.60<br />-3.8%</td>
+      <td data-label="Margin">38.0%</td>
+      <td data-label="Stop Loss">Present</td>
+      <td data-label="Market">
+        <div>24h: -1.100%</div>
+        <div>Funding: +0.012%</div>
+        <div class="mono">position</div>
+      </td>
+    </tr>
+  
+    <tr>
+      <td data-label="Symbol">
+        <div class="position-symbol">SOLUSDT</div>
+        <div class="panel-copy">short 35</div>
+      </td>
+      <td data-label="Risk">
+        <span class="badge warning">WARNING</span>
+      </td>
+      <td data-label="Leverage">4.0x</td>
+      <td data-label="PnL">$157.50<br />+8.9%</td>
+      <td data-label="Margin">22.0%</td>
+      <td data-label="Stop Loss">Missing</td>
+      <td data-label="Market">
+        <div>24h: -4.600%</div>
+        <div>Funding: -0.008%</div>
+        <div class="mono">position</div>
+      </td>
+    </tr>
+  </tbody>
+  </table>
+    </section>
+
+    <section class="panel grid">
+      <div class="panel-header">
+        <div class="panel-title">
+          <h2>Flagged positions</h2>
+          <div class="panel-copy">Focused explanations for positions currently marked as warning or critical, including the recommended protection steps.</div>
+        </div>
+      </div>
+      <div class="risk-list">
+    <article class="risk-card">
+      <div class="risk-card-header">
+        <div>
+          <h3>BTCUSDT</h3>
+          <div class="panel-copy">long 0.12 at 70450, mark 69010</div>
+        </div>
+        <div class="badge critical">CRITICAL</div>
+      </div>
+      <div class="reason">
+        <div class="reason-title">Why it was flagged</div>
+        <div class="reason-list">
+          <div class="reason-item">
+            <div>No stop-loss is configured for this position.</div>
+            <div class="panel-copy">This position has no defined exit guard, so a sudden move can turn a manageable drawdown into a much larger loss and should be addressed quickly.</div>
+          </div>
+        
+          <div class="reason-item">
+            <div>Leverage is 15.0x, above the 10x warning threshold.</div>
+            <div class="panel-copy">This BTCUSDT position is running at 15.0x leverage, so a relatively small move against it can damage margin quickly.</div>
+          </div>
+        
+          <div class="reason-item">
+            <div>Unrealized loss is 18.0%, beyond the 15% critical threshold.</div>
+            <div class="panel-copy">This position is already down 18.0%, which means the trade is no longer a minor fluctuation and needs active risk control.</div>
+          </div>
+        
+          <div class="reason-item">
+            <div>Margin ratio is 85.0%, above the 80% danger threshold.</div>
+            <div class="panel-copy">Margin usage is at 85.0%, which leaves limited room before liquidation pressure becomes a serious concern.</div>
+          </div>
+        
+          <div class="reason-item">
+            <div>Funding rate is 0.450%, above the 0.3% monitoring threshold.</div>
+            <div class="panel-copy">Elevated funding adds carry pressure to the position, so keeping size or leverage unchanged through the next funding window can make a weak trade more expensive.</div>
+          </div>
+        </div>
+      </div>
+      <div class="recommendation">
+        <div class="recommendation-title">Recommended actions</div>
+        <div class="recommendation-list">
+    <div class="recommendation-item">
+      <div>Add a stop-loss for BTCUSDT so downside is capped before losses accelerate.</div>
+      <div class="panel-copy">The fastest way to reduce uncontrolled downside is to define an exit level now.</div>
+      <div class="panel-copy">Confidence: HIGH | Execution path: unsupported_stop_loss_flow | Confirmation required: Yes</div>
+    </div>
+  
+    <div class="recommendation-item">
+      <div>Reduce leverage on BTCUSDT below 10x to widen liquidation distance.</div>
+      <div class="panel-copy">Lower leverage gives the position more room to absorb adverse price moves before margin pressure accelerates.</div>
+      <div class="panel-copy">Confidence: MEDIUM | Execution path: futures_set_leverage | Confirmation required: Yes</div>
+    </div>
+  
+    <div class="recommendation-item">
+      <div>Cut part of BTCUSDT now because the position is already down 18.0%.</div>
+      <div class="panel-copy">Reducing exposure while the loss is already material helps stop the position from dominating account risk.</div>
+      <div class="panel-copy">Confidence: HIGH | Execution path: futures_place_order | Confirmation required: Yes</div>
+    </div>
+  
+    <div class="recommendation-item">
+      <div>Reduce size or add margin on BTCUSDT immediately because margin ratio is 85.0%.</div>
+      <div class="panel-copy">High margin ratio is the clearest near-term liquidation risk signal in the current rule set.</div>
+      <div class="panel-copy">Confidence: HIGH | Execution path: futures_place_order | Confirmation required: Yes</div>
+    </div>
+  
+    <div class="recommendation-item">
+      <div>Avoid opening new futures exposure until account margin pressure improves.</div>
+      <div class="panel-copy">Adding fresh exposure while margin pressure is elevated increases the chance of forced deleveraging.</div>
+      <div class="panel-copy">Confidence: HIGH | Execution path: none | Confirmation required: Yes</div>
+    </div>
+  
+    <div class="recommendation-item">
+      <div>Review BTCUSDT before the next funding window because funding is running at 0.450%.</div>
+      <div class="panel-copy">High funding can erode PnL even if price stalls, so reducing leverage or trimming size may be cheaper than paying repeated carry.</div>
+      <div class="panel-copy">Confidence: MEDIUM | Execution path: none | Confirmation required: Yes</div>
+    </div>
+  </div>
+      </div>
+    </article>
+  
+    <article class="risk-card">
+      <div class="risk-card-header">
+        <div>
+          <h3>SOLUSDT</h3>
+          <div class="panel-copy">short 35 at 142, mark 137.5</div>
+        </div>
+        <div class="badge warning">WARNING</div>
+      </div>
+      <div class="reason">
+        <div class="reason-title">Why it was flagged</div>
+        <div class="reason-list">
+          <div class="reason-item">
+            <div>No stop-loss is configured for this position.</div>
+            <div class="panel-copy">This position has no defined exit guard, so a sudden move can turn a manageable drawdown into a much larger loss and should be addressed quickly.</div>
+          </div>
+        </div>
+      </div>
+      <div class="recommendation">
+        <div class="recommendation-title">Recommended actions</div>
+        <div class="recommendation-list">
+    <div class="recommendation-item">
+      <div>Add a stop-loss for SOLUSDT so downside is capped before losses accelerate.</div>
+      <div class="panel-copy">The fastest way to reduce uncontrolled downside is to define an exit level now.</div>
+      <div class="panel-copy">Confidence: HIGH | Execution path: unsupported_stop_loss_flow | Confirmation required: Yes</div>
+    </div>
+  </div>
+      </div>
+    </article>
+  </div>
+    </section>
+
+    <section class="panel grid">
+      <div class="panel-header">
+        <div class="panel-title">
+          <h2>Recommended Follow-up</h2>
+          <div class="panel-copy">Suggested Professional follow-ups for deeper market context after core risk scan. These are optional analyst extensions..</div>
+        </div>
+      </div>
+      <div class="skill-list">
+    <article class="skill-card">
+      <div class="skill-name">sentiment-analyst</div>
+      <div class="skill-purpose">Explains funding, long/short positioning, leverage crowding, and market mood.</div>
+      <div class="skill-meta">When to use: Use when funding pressure, leverage crowding, or squeeze risk may affect a flagged position.</div>
+      <div class="skill-prompt">Use sentiment-analyst to explain funding, long-short ratios, open interest, and squeeze risk for BTCUSDT.</div>
+    </article>
+  
+    <article class="skill-card">
+      <div class="skill-name">technical-analysis</div>
+      <div class="skill-purpose">Adds indicator-driven support, resistance, trend, and momentum context.</div>
+      <div class="skill-meta">When to use: Use when you want entry, exit, support, resistance, and indicator context for a flagged symbol.</div>
+      <div class="skill-prompt">Use technical-analysis to map trend, momentum, support, and resistance for BTCUSDT on 4h and 1d.</div>
+    </article>
+  
+    <article class="skill-card">
+      <div class="skill-name">news-briefing</div>
+      <div class="skill-purpose">Summarizes the latest market-moving news and narrative shifts.</div>
+      <div class="skill-meta">When to use: Use when a position looks risky and you want to know whether news flow is part of the reason.</div>
+      <div class="skill-prompt">Use news-briefing to summarize the latest headlines that could affect my flagged Bitget futures positions.</div>
+    </article>
+  
+    <article class="skill-card">
+      <div class="skill-name">macro-analyst</div>
+      <div class="skill-purpose">Explains global macro and cross-asset context for the portfolio.</div>
+      <div class="skill-meta">When to use: Use when you want to understand whether the broader market regime is risk-on or risk-off.</div>
+      <div class="skill-prompt">Use macro-analyst to explain whether the current macro regime increases risk for my Bitget futures portfolio.</div>
+    </article>
+  
+    <article class="skill-card">
+      <div class="skill-name">market-intel</div>
+      <div class="skill-purpose">Adds ETF, whale-flow, DeFi, and structural market context.</div>
+      <div class="skill-meta">When to use: Use when a flagged major coin needs deeper on-chain or institutional context.</div>
+      <div class="skill-prompt">Use market-intel to explain whether ETF flows, whale activity, or on-chain data increase risk for BTC right now.</div>
+    </article>
+  </div>
+    </section>
+
+    <section class="panel grid">
+      <div class="panel-header">
+        <div class="panel-title">
+          <h2>Audit and warnings</h2>
+          <div class="panel-copy">Runtime safety state, upstream fetch warnings, and a raw JSON view.</div>
+        </div>
+      </div>
+      <div class="meta-grid">
+        <div class="meta-chip">
+          <div class="meta-label">Bitget CLI</div>
+          <div class="meta-value">Unavailable</div>
+        </div>
+        <div class="meta-chip">
+          <div class="meta-label">Credentials</div>
+          <div class="meta-value">Missing</div>
+        </div>
+        <div class="meta-chip">
+          <div class="meta-label">Safety Mode</div>
+          <div class="meta-value">Read-only</div>
+        </div>
+      </div>
+      <ul class="warning-list"><li>Using bundled simulation portfolio data.</li></ul>
+      <details>
+        <summary>Raw scan JSON</summary>
+        <pre>{
+  &quot;timestamp&quot;: &quot;2026-04-06T05:58:18.434Z&quot;,
+  &quot;mode&quot;: &quot;SIMULATION&quot;,
+  &quot;productType&quot;: &quot;USDT-FUTURES&quot;,
+  &quot;diagnostics&quot;: {
+    &quot;bgcAvailable&quot;: false,
+    &quot;credentialsPresent&quot;: false,
+    &quot;readOnlyMode&quot;: true
+  },
+  &quot;accountSummary&quot;: {
+    &quot;totalEquity&quot;: 1600,
+    &quot;totalAvailable&quot;: 920,
+    &quot;totalUnrealizedPnl&quot;: -126.89999999999998,
+    &quot;openPositionCount&quot;: 3,
+    &quot;assets&quot;: [
+      {
+        &quot;asset&quot;: &quot;USDT&quot;,
+        &quot;available&quot;: 920,
+        &quot;equity&quot;: 1600,
+        &quot;locked&quot;: 180,
+        &quot;unrealizedPnl&quot;: -110
+      }
+    ]
+  },
+  &quot;positions&quot;: [
+    {
+      &quot;symbol&quot;: &quot;BTCUSDT&quot;,
+      &quot;side&quot;: &quot;long&quot;,
+      &quot;size&quot;: 0.12,
+      &quot;entryPrice&quot;: 70450,
+      &quot;markPrice&quot;: 69010,
+      &quot;leverage&quot;: 15,
+      &quot;unrealizedPnl&quot;: -172.8,
+      &quot;unrealizedPnlPct&quot;: -18,
+      &quot;marginRatio&quot;: 85,
+      &quot;stopLossPresent&quot;: false,
+      &quot;marketContext&quot;: {
+        &quot;fundingRatePct&quot;: 0.45,
+        &quot;priceChange24hPct&quot;: -3.4,
+        &quot;markPriceSource&quot;: &quot;position&quot;
+      },
+      &quot;riskLevel&quot;: &quot;CRITICAL&quot;,
+      &quot;riskReasons&quot;: [
+        {
+          &quot;code&quot;: &quot;NO_STOP_LOSS&quot;,
+          &quot;severity&quot;: &quot;WARNING&quot;,
+          &quot;message&quot;: &quot;No stop-loss is configured for this position.&quot;,
+          &quot;traderExplanation&quot;: &quot;This position has no defined exit guard, so a sudden move can turn a manageable drawdown into a much larger loss and should be addressed quickly.&quot;
+        },
+        {
+          &quot;code&quot;: &quot;HIGH_LEVERAGE&quot;,
+          &quot;severity&quot;: &quot;WARNING&quot;,
+          &quot;message&quot;: &quot;Leverage is 15.0x, above the 10x warning threshold.&quot;,
+          &quot;traderExplanation&quot;: &quot;This BTCUSDT position is running at 15.0x leverage, so a relatively small move against it can damage margin quickly.&quot;
+        },
+        {
+          &quot;code&quot;: &quot;LARGE_UNREALIZED_LOSS&quot;,
+          &quot;severity&quot;: &quot;CRITICAL&quot;,
+          &quot;message&quot;: &quot;Unrealized loss is 18.0%, beyond the 15% critical threshold.&quot;,
+          &quot;traderExplanation&quot;: &quot;This position is already down 18.0%, which means the trade is no longer a minor fluctuation and needs active risk control.&quot;
+        },
+        {
+          &quot;code&quot;: &quot;HIGH_MARGIN_RATIO&quot;,
+          &quot;severity&quot;: &quot;CRITICAL&quot;,
+          &quot;message&quot;: &quot;Margin ratio is 85.0%, above the 80% danger threshold.&quot;,
+          &quot;traderExplanation&quot;: &quot;Margin usage is at 85.0%, which leaves limited room before liquidation pressure becomes a serious concern.&quot;
+        },
+        {
+          &quot;code&quot;: &quot;HIGH_FUNDING_RATE&quot;,
+          &quot;severity&quot;: &quot;WARNING&quot;,
+          &quot;message&quot;: &quot;Funding rate is 0.450%, above the 0.3% monitoring threshold.&quot;,
+          &quot;traderExplanation&quot;: &quot;Elevated funding adds carry pressure to the position, so keeping size or leverage unchanged through the next funding window can make a weak trade more expensive.&quot;
+        }
+      ],
+      &quot;recommendation&quot;: [
+        {
+          &quot;action&quot;: &quot;add stop-loss&quot;,
+          &quot;summary&quot;: &quot;Add a stop-loss for BTCUSDT so downside is capped before losses accelerate.&quot;,
+          &quot;confidence&quot;: &quot;HIGH&quot;,
+          &quot;rationale&quot;: &quot;The fastest way to reduce uncontrolled downside is to define an exit level now.&quot;,
+          &quot;executionPath&quot;: {
+            &quot;skill&quot;: &quot;unsupported_stop_loss_flow&quot;,
+            &quot;side&quot;: &quot;n/a&quot;,
+            &quot;sizeHint&quot;: &quot;100% of current position as a protective stop&quot;,
+            &quot;confirmationRequired&quot;: true
+          }
+        },
+        {
+          &quot;action&quot;: &quot;lower leverage&quot;,
+          &quot;summary&quot;: &quot;Reduce leverage on BTCUSDT below 10x to widen liquidation distance.&quot;,
+          &quot;confidence&quot;: &quot;MEDIUM&quot;,
+          &quot;rationale&quot;: &quot;Lower leverage gives the position more room to absorb adverse price moves before margin pressure accelerates.&quot;,
+          &quot;executionPath&quot;: {
+            &quot;skill&quot;: &quot;futures_set_leverage&quot;,
+            &quot;side&quot;: &quot;n/a&quot;,
+            &quot;sizeHint&quot;: &quot;Target leverage below 10x&quot;,
+            &quot;confirmationRequired&quot;: true
+          }
+        },
+        {
+          &quot;action&quot;: &quot;close partial position&quot;,
+          &quot;summary&quot;: &quot;Cut part of BTCUSDT now because the position is already down 18.0%.&quot;,
+          &quot;confidence&quot;: &quot;HIGH&quot;,
+          &quot;rationale&quot;: &quot;Reducing exposure while the loss is already material helps stop the position from dominating account risk.&quot;,
+          &quot;executionPath&quot;: {
+            &quot;skill&quot;: &quot;futures_place_order&quot;,
+            &quot;side&quot;: &quot;sell&quot;,
+            &quot;sizeHint&quot;: &quot;Close 25% to 50% of current position size&quot;,
+            &quot;confirmationRequired&quot;: true
+          }
+        },
+        {
+          &quot;action&quot;: &quot;reduce position size&quot;,
+          &quot;summary&quot;: &quot;Reduce size or add margin on BTCUSDT immediately because margin ratio is 85.0%.&quot;,
+          &quot;confidence&quot;: &quot;HIGH&quot;,
+          &quot;rationale&quot;: &quot;High margin ratio is the clearest near-term liquidation risk signal in the current rule set.&quot;,
+          &quot;executionPath&quot;: {
+            &quot;skill&quot;: &quot;futures_place_order&quot;,
+            &quot;side&quot;: &quot;sell&quot;,
+            &quot;sizeHint&quot;: &quot;Reduce 25% of current position size or add margin&quot;,
+            &quot;confirmationRequired&quot;: true
+          }
+        },
+        {
+          &quot;action&quot;: &quot;avoid new entries&quot;,
+          &quot;summary&quot;: &quot;Avoid opening new futures exposure until account margin pressure improves.&quot;,
+          &quot;confidence&quot;: &quot;HIGH&quot;,
+          &quot;rationale&quot;: &quot;Adding fresh exposure while margin pressure is elevated increases the chance of forced deleveraging.&quot;,
+          &quot;executionPath&quot;: {
+            &quot;skill&quot;: &quot;none&quot;,
+            &quot;side&quot;: &quot;n/a&quot;,
+            &quot;sizeHint&quot;: &quot;Pause new entries until margin ratio normalizes&quot;,
+            &quot;confirmationRequired&quot;: true
+          }
+        },
+        {
+          &quot;action&quot;: &quot;review funding exposure&quot;,
+          &quot;summary&quot;: &quot;Review BTCUSDT before the next funding window because funding is running at 0.450%.&quot;,
+          &quot;confidence&quot;: &quot;MEDIUM&quot;,
+          &quot;rationale&quot;: &quot;High funding can erode PnL even if price stalls, so reducing leverage or trimming size may be cheaper than paying repeated carry.&quot;,
+          &quot;executionPath&quot;: {
+            &quot;skill&quot;: &quot;none&quot;,
+            &quot;side&quot;: &quot;n/a&quot;,
+            &quot;sizeHint&quot;: &quot;Trim size or reduce leverage before the next funding event&quot;,
+            &quot;confirmationRequired&quot;: true
+          }
+        }
+      ]
+    },
+    {
+      &quot;symbol&quot;: &quot;ETHUSDT&quot;,
+      &quot;side&quot;: &quot;long&quot;,
+      &quot;size&quot;: 1.8,
+      &quot;entryPrice&quot;: 3560,
+      &quot;markPrice&quot;: 3498,
+      &quot;leverage&quot;: 6,
+      &quot;unrealizedPnl&quot;: -111.6,
+      &quot;unrealizedPnlPct&quot;: -3.8,
+      &quot;marginRatio&quot;: 38,
+      &quot;stopLossPresent&quot;: true,
+      &quot;marketContext&quot;: {
+        &quot;fundingRatePct&quot;: 0.012,
+        &quot;priceChange24hPct&quot;: -1.1,
+        &quot;markPriceSource&quot;: &quot;position&quot;
+      },
+      &quot;riskLevel&quot;: &quot;SAFE&quot;,
+      &quot;riskReasons&quot;: [],
+      &quot;recommendation&quot;: []
+    },
+    {
+      &quot;symbol&quot;: &quot;SOLUSDT&quot;,
+      &quot;side&quot;: &quot;short&quot;,
+      &quot;size&quot;: 35,
+      &quot;entryPrice&quot;: 142,
+      &quot;markPrice&quot;: 137.5,
+      &quot;leverage&quot;: 4,
+      &quot;unrealizedPnl&quot;: 157.5,
+      &quot;unrealizedPnlPct&quot;: 8.9,
+      &quot;marginRatio&quot;: 22,
+      &quot;stopLossPresent&quot;: false,
+      &quot;marketContext&quot;: {
+        &quot;fundingRatePct&quot;: -0.008,
+        &quot;priceChange24hPct&quot;: -4.6,
+        &quot;markPriceSource&quot;: &quot;position&quot;
+      },
+      &quot;riskLevel&quot;: &quot;WARNING&quot;,
+      &quot;riskReasons&quot;: [
+        {
+          &quot;code&quot;: &quot;NO_STOP_LOSS&quot;,
+          &quot;severity&quot;: &quot;WARNING&quot;,
+          &quot;message&quot;: &quot;No stop-loss is configured for this position.&quot;,
+          &quot;traderExplanation&quot;: &quot;This position has no defined exit guard, so a sudden move can turn a manageable drawdown into a much larger loss and should be addressed quickly.&quot;
+        }
+      ],
+      &quot;recommendation&quot;: [
+        {
+          &quot;action&quot;: &quot;add stop-loss&quot;,
+          &quot;summary&quot;: &quot;Add a stop-loss for SOLUSDT so downside is capped before losses accelerate.&quot;,
+          &quot;confidence&quot;: &quot;HIGH&quot;,
+          &quot;rationale&quot;: &quot;The fastest way to reduce uncontrolled downside is to define an exit level now.&quot;,
+          &quot;executionPath&quot;: {
+            &quot;skill&quot;: &quot;unsupported_stop_loss_flow&quot;,
+            &quot;side&quot;: &quot;n/a&quot;,
+            &quot;sizeHint&quot;: &quot;100% of current position as a protective stop&quot;,
+            &quot;confirmationRequired&quot;: true
+          }
+        }
+      ]
+    }
+  ],
+  &quot;flaggedPositions&quot;: [
+    {
+      &quot;symbol&quot;: &quot;BTCUSDT&quot;,
+      &quot;side&quot;: &quot;long&quot;,
+      &quot;size&quot;: 0.12,
+      &quot;entryPrice&quot;: 70450,
+      &quot;markPrice&quot;: 69010,
+      &quot;leverage&quot;: 15,
+      &quot;unrealizedPnl&quot;: -172.8,
+      &quot;unrealizedPnlPct&quot;: -18,
+      &quot;marginRatio&quot;: 85,
+      &quot;stopLossPresent&quot;: false,
+      &quot;marketContext&quot;: {
+        &quot;fundingRatePct&quot;: 0.45,
+        &quot;priceChange24hPct&quot;: -3.4,
+        &quot;markPriceSource&quot;: &quot;position&quot;
+      },
+      &quot;riskLevel&quot;: &quot;CRITICAL&quot;,
+      &quot;riskReasons&quot;: [
+        {
+          &quot;code&quot;: &quot;NO_STOP_LOSS&quot;,
+          &quot;severity&quot;: &quot;WARNING&quot;,
+          &quot;message&quot;: &quot;No stop-loss is configured for this position.&quot;,
+          &quot;traderExplanation&quot;: &quot;This position has no defined exit guard, so a sudden move can turn a manageable drawdown into a much larger loss and should be addressed quickly.&quot;
+        },
+        {
+          &quot;code&quot;: &quot;HIGH_LEVERAGE&quot;,
+          &quot;severity&quot;: &quot;WARNING&quot;,
+          &quot;message&quot;: &quot;Leverage is 15.0x, above the 10x warning threshold.&quot;,
+          &quot;traderExplanation&quot;: &quot;This BTCUSDT position is running at 15.0x leverage, so a relatively small move against it can damage margin quickly.&quot;
+        },
+        {
+          &quot;code&quot;: &quot;LARGE_UNREALIZED_LOSS&quot;,
+          &quot;severity&quot;: &quot;CRITICAL&quot;,
+          &quot;message&quot;: &quot;Unrealized loss is 18.0%, beyond the 15% critical threshold.&quot;,
+          &quot;traderExplanation&quot;: &quot;This position is already down 18.0%, which means the trade is no longer a minor fluctuation and needs active risk control.&quot;
+        },
+        {
+          &quot;code&quot;: &quot;HIGH_MARGIN_RATIO&quot;,
+          &quot;severity&quot;: &quot;CRITICAL&quot;,
+          &quot;message&quot;: &quot;Margin ratio is 85.0%, above the 80% danger threshold.&quot;,
+          &quot;traderExplanation&quot;: &quot;Margin usage is at 85.0%, which leaves limited room before liquidation pressure becomes a serious concern.&quot;
+        },
+        {
+          &quot;code&quot;: &quot;HIGH_FUNDING_RATE&quot;,
+          &quot;severity&quot;: &quot;WARNING&quot;,
+          &quot;message&quot;: &quot;Funding rate is 0.450%, above the 0.3% monitoring threshold.&quot;,
+          &quot;traderExplanation&quot;: &quot;Elevated funding adds carry pressure to the position, so keeping size or leverage unchanged through the next funding window can make a weak trade more expensive.&quot;
+        }
+      ],
+      &quot;recommendation&quot;: [
+        {
+          &quot;action&quot;: &quot;add stop-loss&quot;,
+          &quot;summary&quot;: &quot;Add a stop-loss for BTCUSDT so downside is capped before losses accelerate.&quot;,
+          &quot;confidence&quot;: &quot;HIGH&quot;,
+          &quot;rationale&quot;: &quot;The fastest way to reduce uncontrolled downside is to define an exit level now.&quot;,
+          &quot;executionPath&quot;: {
+            &quot;skill&quot;: &quot;unsupported_stop_loss_flow&quot;,
+            &quot;side&quot;: &quot;n/a&quot;,
+            &quot;sizeHint&quot;: &quot;100% of current position as a protective stop&quot;,
+            &quot;confirmationRequired&quot;: true
+          }
+        },
+        {
+          &quot;action&quot;: &quot;lower leverage&quot;,
+          &quot;summary&quot;: &quot;Reduce leverage on BTCUSDT below 10x to widen liquidation distance.&quot;,
+          &quot;confidence&quot;: &quot;MEDIUM&quot;,
+          &quot;rationale&quot;: &quot;Lower leverage gives the position more room to absorb adverse price moves before margin pressure accelerates.&quot;,
+          &quot;executionPath&quot;: {
+            &quot;skill&quot;: &quot;futures_set_leverage&quot;,
+            &quot;side&quot;: &quot;n/a&quot;,
+            &quot;sizeHint&quot;: &quot;Target leverage below 10x&quot;,
+            &quot;confirmationRequired&quot;: true
+          }
+        },
+        {
+          &quot;action&quot;: &quot;close partial position&quot;,
+          &quot;summary&quot;: &quot;Cut part of BTCUSDT now because the position is already down 18.0%.&quot;,
+          &quot;confidence&quot;: &quot;HIGH&quot;,
+          &quot;rationale&quot;: &quot;Reducing exposure while the loss is already material helps stop the position from dominating account risk.&quot;,
+          &quot;executionPath&quot;: {
+            &quot;skill&quot;: &quot;futures_place_order&quot;,
+            &quot;side&quot;: &quot;sell&quot;,
+            &quot;sizeHint&quot;: &quot;Close 25% to 50% of current position size&quot;,
+            &quot;confirmationRequired&quot;: true
+          }
+        },
+        {
+          &quot;action&quot;: &quot;reduce position size&quot;,
+          &quot;summary&quot;: &quot;Reduce size or add margin on BTCUSDT immediately because margin ratio is 85.0%.&quot;,
+          &quot;confidence&quot;: &quot;HIGH&quot;,
+          &quot;rationale&quot;: &quot;High margin ratio is the clearest near-term liquidation risk signal in the current rule set.&quot;,
+          &quot;executionPath&quot;: {
+            &quot;skill&quot;: &quot;futures_place_order&quot;,
+            &quot;side&quot;: &quot;sell&quot;,
+            &quot;sizeHint&quot;: &quot;Reduce 25% of current position size or add margin&quot;,
+            &quot;confirmationRequired&quot;: true
+          }
+        },
+        {
+          &quot;action&quot;: &quot;avoid new entries&quot;,
+          &quot;summary&quot;: &quot;Avoid opening new futures exposure until account margin pressure improves.&quot;,
+          &quot;confidence&quot;: &quot;HIGH&quot;,
+          &quot;rationale&quot;: &quot;Adding fresh exposure while margin pressure is elevated increases the chance of forced deleveraging.&quot;,
+          &quot;executionPath&quot;: {
+            &quot;skill&quot;: &quot;none&quot;,
+            &quot;side&quot;: &quot;n/a&quot;,
+            &quot;sizeHint&quot;: &quot;Pause new entries until margin ratio normalizes&quot;,
+            &quot;confirmationRequired&quot;: true
+          }
+        },
+        {
+          &quot;action&quot;: &quot;review funding exposure&quot;,
+          &quot;summary&quot;: &quot;Review BTCUSDT before the next funding window because funding is running at 0.450%.&quot;,
+          &quot;confidence&quot;: &quot;MEDIUM&quot;,
+          &quot;rationale&quot;: &quot;High funding can erode PnL even if price stalls, so reducing leverage or trimming size may be cheaper than paying repeated carry.&quot;,
+          &quot;executionPath&quot;: {
+            &quot;skill&quot;: &quot;none&quot;,
+            &quot;side&quot;: &quot;n/a&quot;,
+            &quot;sizeHint&quot;: &quot;Trim size or reduce leverage before the next funding event&quot;,
+            &quot;confirmationRequired&quot;: true
+          }
+        }
+      ]
+    },
+    {
+      &quot;symbol&quot;: &quot;SOLUSDT&quot;,
+      &quot;side&quot;: &quot;short&quot;,
+      &quot;size&quot;: 35,
+      &quot;entryPrice&quot;: 142,
+      &quot;markPrice&quot;: 137.5,
+      &quot;leverage&quot;: 4,
+      &quot;unrealizedPnl&quot;: 157.5,
+      &quot;unrealizedPnlPct&quot;: 8.9,
+      &quot;marginRatio&quot;: 22,
+      &quot;stopLossPresent&quot;: false,
+      &quot;marketContext&quot;: {
+        &quot;fundingRatePct&quot;: -0.008,
+        &quot;priceChange24hPct&quot;: -4.6,
+        &quot;markPriceSource&quot;: &quot;position&quot;
+      },
+      &quot;riskLevel&quot;: &quot;WARNING&quot;,
+      &quot;riskReasons&quot;: [
+        {
+          &quot;code&quot;: &quot;NO_STOP_LOSS&quot;,
+          &quot;severity&quot;: &quot;WARNING&quot;,
+          &quot;message&quot;: &quot;No stop-loss is configured for this position.&quot;,
+          &quot;traderExplanation&quot;: &quot;This position has no defined exit guard, so a sudden move can turn a manageable drawdown into a much larger loss and should be addressed quickly.&quot;
+        }
+      ],
+      &quot;recommendation&quot;: [
+        {
+          &quot;action&quot;: &quot;add stop-loss&quot;,
+          &quot;summary&quot;: &quot;Add a stop-loss for SOLUSDT so downside is capped before losses accelerate.&quot;,
+          &quot;confidence&quot;: &quot;HIGH&quot;,
+          &quot;rationale&quot;: &quot;The fastest way to reduce uncontrolled downside is to define an exit level now.&quot;,
+          &quot;executionPath&quot;: {
+            &quot;skill&quot;: &quot;unsupported_stop_loss_flow&quot;,
+            &quot;side&quot;: &quot;n/a&quot;,
+            &quot;sizeHint&quot;: &quot;100% of current position as a protective stop&quot;,
+            &quot;confirmationRequired&quot;: true
+          }
+        }
+      ]
+    }
+  ],
+  &quot;riskLevel&quot;: &quot;CRITICAL&quot;,
+  &quot;riskReasons&quot;: [
+    &quot;No stop-loss is configured for this position.&quot;,
+    &quot;Leverage is 15.0x, above the 10x warning threshold.&quot;,
+    &quot;Unrealized loss is 18.0%, beyond the 15% critical threshold.&quot;,
+    &quot;Margin ratio is 85.0%, above the 80% danger threshold.&quot;,
+    &quot;Funding rate is 0.450%, above the 0.3% monitoring threshold.&quot;
+  ],
+  &quot;recommendation&quot;: [
+    &quot;Add a stop-loss for BTCUSDT so downside is capped before losses accelerate.&quot;,
+    &quot;Reduce leverage on BTCUSDT below 10x to widen liquidation distance.&quot;,
+    &quot;Cut part of BTCUSDT now because the position is already down 18.0%.&quot;,
+    &quot;Reduce size or add margin on BTCUSDT immediately because margin ratio is 85.0%.&quot;,
+    &quot;Avoid opening new futures exposure until account margin pressure improves.&quot;,
+    &quot;Review BTCUSDT before the next funding window because funding is running at 0.450%.&quot;,
+    &quot;Add a stop-loss for SOLUSDT so downside is capped before losses accelerate.&quot;
+  ],
+  &quot;scanStatus&quot;: &quot;COMPLETE&quot;,
+  &quot;fetchWarnings&quot;: [
+    &quot;Using bundled simulation portfolio data.&quot;
+  ],
+  &quot;skillCalls&quot;: [
+    {
+      &quot;surface&quot;: &quot;Bitget AgentHub Skills&quot;,
+      &quot;command&quot;: &quot;bgc account get_account_assets&quot;,
+      &quot;status&quot;: &quot;SKIPPED&quot;,
+      &quot;note&quot;: &quot;Simulation mode uses bundled account data.&quot;
+    },
+    {
+      &quot;surface&quot;: &quot;Bitget AgentHub Skills&quot;,
+      &quot;command&quot;: &quot;bgc futures futures_get_positions --productType USDT-FUTURES&quot;,
+      &quot;status&quot;: &quot;SKIPPED&quot;,
+      &quot;note&quot;: &quot;Simulation mode uses bundled futures positions.&quot;
+    },
+    {
+      &quot;surface&quot;: &quot;Bitget AgentHub Skills&quot;,
+      &quot;command&quot;: &quot;bgc futures futures_get_ticker --symbol BTCUSDT&quot;,
+      &quot;status&quot;: &quot;SKIPPED&quot;,
+      &quot;note&quot;: &quot;Simulation mode uses bundled ticker context.&quot;
+    },
+    {
+      &quot;surface&quot;: &quot;Bitget AgentHub Skills&quot;,
+      &quot;command&quot;: &quot;bgc futures futures_get_funding_rate --symbol BTCUSDT&quot;,
+      &quot;status&quot;: &quot;SKIPPED&quot;,
+      &quot;note&quot;: &quot;Simulation mode uses bundled funding context.&quot;
+    }
+  ]
+}</pre>
+      </details>
+    </section>
+  </main>
+</body>
+</html>

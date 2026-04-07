@@ -1,0 +1,31 @@
+{
+  "name": "bitget_risk_watch",
+  "version": "1.0.0",
+  "description": "Bitget-native futures portfolio risk assistant",
+  "main": "index.js",
+  "scripts": {
+    "scan": "ts-node src/index.ts",
+    "report": "ts-node src/reportServer.ts",
+    "query": "ts-node src/query.ts",
+    "execute": "ts-node src/execute.ts",
+    "demo": "bash demo/run-demo.sh",
+    "typecheck": "tsc --noEmit"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/anihdev/Bitget_Risk_Watch.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/anihdev/Bitget_Risk_Watch/issues"
+  },
+  "homepage": "https://github.com/anihdev/Bitget_Risk_Watch#readme",
+  "dependencies": {
+    "@types/node": "^25.5.0",
+    "dotenv": "^17.4.0",
+    "ts-node": "^10.9.2",
+    "typescript": "^6.0.2"
+  }
+}
