@@ -575,7 +575,7 @@ function buildHtmlReport(scanRecord: ScanRecord): string {
       <div class="hero-copy">
         <div>
           <h1>Portfolio risk report</h1>
-          <p class="subhead">Bitget Risk Watch terminal output for ${escapeHtml(scanRecord.productType)} positions. This report shows what is at risk, why it was flagged, and the protective actions recommended by the agent via CLI.</p>
+          <p class="subhead">Bitget Risk Watch terminal output for ${escapeHtml(scanRecord.productType)} positions. This is a Real-Time report showing what is at risk, why it was flagged, and the protective actions recommended by bitget market-analysis skills via CLI.</p>
         </div>
         <div class="hero-meta">
           <div class="badge ${riskClass(scanRecord.riskLevel)}">${escapeHtml(scanRecord.riskLevel)} overall risk</div>
@@ -795,7 +795,7 @@ function renderSkillHubSuggestions(scanRecord: ScanRecord): string {
 /** Renders upstream warnings collected during fetch and normalization. */
 function renderWarnings(warnings: string[]): string {
   if (warnings.length === 0) {
-    return '<p class="panel-copy">No upstream fetch warnings were recorded for this scan.</p>';
+    return '<p class="panel-copy">No upstream fetch warnings were recorded for this scan, All is fine.</p>';
   }
 
   return `<ul class="warning-list">${warnings.map((warning) => `<li>${escapeHtml(warning)}</li>`).join('')}</ul>`;

@@ -90,6 +90,7 @@ export function readLivePortfolioState(
   const accountAssets = normalizeAccountAssets(assetsPayload);
   const positions = enrichPositionsWithTickers(
     normalizePositions(positionsPayload),
+    productType,
     fetchWarnings,
     skillCalls,
   );
@@ -189,11 +190,17 @@ function normalizeAccountAssets(payload: unknown): AccountAsset[] {
   const entries = unwrapCollection(payload);
   return entries
     .map((entry) => {
-      const asset = readString(entry, ['coin', 'asset', 'marginCoin']) ?? 'UNKNOWN';
+      const asset = readString(entry, ['coin', 'asset', 'marginCoin', 'accountType']) ?? 'UNKNOWN';
+      const usdtBalance = readNumber(entry, ['usdtBalance']);
+      const available =
+        readNumber(entry, ['available', 'availableBalance', 'usdtAvailable', 'free']) ?? usdtBalance ?? 0;
+      const equity =
+        readNumber(entry, ['equity', 'balance', 'accountEquity', 'total']) ?? usdtBalance ?? available;
+
       return {
         asset,
-        available: readNumber(entry, ['available', 'availableBalance', 'usdtAvailable', 'free']) ?? 0,
-        equity: readNumber(entry, ['equity', 'balance', 'accountEquity', 'total']) ?? 0,
+        available,
+        equity,
         locked: readNumber(entry, ['frozen', 'locked', 'hold']) ?? 0,
         unrealizedPnl: readNumber(entry, ['unrealizedPL', 'upl', 'unrealizedPnl']) ?? 0,
       };
@@ -248,12 +255,13 @@ function normalizePosition(entry: JsonRecord): NormalizedPosition | null {
 /** Enriches positions with ticker and funding context needed by the risk rules. */
 function enrichPositionsWithTickers(
   positions: NormalizedPosition[],
+  productType: 'USDT-FUTURES',
   fetchWarnings: string[],
   skillCalls: SkillCall[],
 ): NormalizedPosition[] {
   return positions.map((position) => {
-    const tickerSnapshot = readTickerSnapshot(position.symbol, fetchWarnings, skillCalls);
-    const fundingRatePct = readFundingRate(position.symbol, fetchWarnings, skillCalls);
+    const tickerSnapshot = readTickerSnapshot(position.symbol, productType, fetchWarnings, skillCalls);
+    const fundingRatePct = readFundingRate(position.symbol, productType, fetchWarnings, skillCalls);
 
     // Prefer the position mark price when available, then fall back to ticker data.
     let nextPosition: NormalizedPosition = {
@@ -287,11 +295,12 @@ function enrichPositionsWithTickers(
 /** Reads market price context, falling back from futures ticker to spot ticker if needed. */
 function readTickerSnapshot(
   symbol: string,
+  productType: 'USDT-FUTURES',
   fetchWarnings: string[],
   skillCalls: SkillCall[],
 ): { markPrice: number | null; priceChange24hPct: number | null; markPriceSource: 'futures_ticker' | 'spot_ticker_fallback' } | null {
   const futuresPayload = readBgcJson(
-    ['futures', 'futures_get_ticker', '--symbol', symbol],
+    ['futures', 'futures_get_ticker', '--symbol', symbol, '--productType', productType],
     fetchWarnings,
     skillCalls,
   );
@@ -331,11 +340,12 @@ function readTickerSnapshot(
 /** Reads the current funding rate for a symbol, if Bitget returns one. */
 function readFundingRate(
   symbol: string,
+  productType: 'USDT-FUTURES',
   fetchWarnings: string[],
   skillCalls: SkillCall[],
 ): number | null {
   const payload = readBgcJson(
-    ['futures', 'futures_get_funding_rate', '--symbol', symbol],
+    ['futures', 'futures_get_funding_rate', '--symbol', symbol, '--productType', productType],
     fetchWarnings,
     skillCalls,
   );
